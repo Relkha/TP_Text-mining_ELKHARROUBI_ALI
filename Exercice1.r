@@ -4,18 +4,22 @@ library(wordcloud)
 #Exercice 1
 
 #1. Lecture et description
-donnees <- read.csv("abcnews-date-text3.csv", stringsAsFactors = FALSE)
-str(donnees) #1244184 depeches, 2 variables : publish_date (AAAAMMJJ) et headline_text (titre)
+donnees <- read.csv("data/abcnews-date-text3.csv", stringsAsFactors = FALSE)
+str(donnees)
 dim(donnees)
 head(donnees)
-range(donnees$publish_date) #du 19/02/2003 au 31/12/2021
-summary(nchar(donnees$headline_text)) #titres de 3 a 70 caracteres, 41 en moyenne
+range(donnees$publish_date)
+summary(nchar(donnees$headline_text))
 table(substr(donnees$publish_date, 1, 4))
 
-#2. Depeches d'un mois (mars 2019), corpus et nettoyage
+#Reponse Q1 : le fichier contient 1244184 depeches de l'ABC (Australie), du 19/02/2003 au 31/12/2021.
+#Il y a 2 variables : publish_date (la date, AAAAMMJJ) et headline_text (le titre, deja en minuscules).
+#Les titres sont courts (41 caracteres en moyenne) et il n'y a pas de titre vide.
+
+#2. mars 2019, corpus et nettoyage
 mois <- substr(donnees$publish_date, 1, 6)
 dmois <- donnees[mois == "201903", ]
-nrow(dmois) #3005 depeches
+nrow(dmois)
 
 Corpus_mois <- VCorpus(VectorSource(dmois$headline_text))
 
@@ -31,27 +35,36 @@ content(clean[[1]])
 nbmotsavant <- sapply(Corpus_mois, function(d) length(words(d)))
 nbmotsapres <- sapply(clean, function(d) length(words(d)))
 
-mean(nbmotsavant) #7.75
-var(nbmotsavant) #3.86
-mean(nbmotsapres) #6.22
-var(nbmotsapres) #2.71
+mean(nbmotsavant)
+var(nbmotsavant)
+mean(nbmotsapres)
+var(nbmotsapres)
 
 dtm <- DocumentTermMatrix(clean)
 print(dtm)
-m = as.matrix(dtm)
-dim(m) #3005 x 6476
+m <- as.matrix(dtm)
+dim(m)
 
 nbuniq <- rowSums(m > 0)
-mean(nbuniq) #6.09
-var(nbuniq) #2.61
+mean(nbuniq)
+var(nbuniq)
+
+#Reponse Q3 : le nettoyage enleve environ 1.5 mot par titre (surtout des stopwords). Les titres sont courts donc
+#il y a presque pas de mots repetes dans un titre : 6.09 mots uniques pour 6.22 mots.
+#(la matrice document-terme ignore les mots de moins de 3 lettres)
 
 #4. Creux et grande dimension
 zeros <- sum(m == 0)
 total <- prod(dim(dtm))
-spa = (zeros/total) * 100
-spa #99.9%
-ncol(m) #6476 mots differents
-mean(nbuniq) #un document utilise 6 mots sur 6476
+spa <- (zeros/total) * 100
+spa
+ncol(m)
+mean(nbuniq)
+
+#Reponse Q4 : la matrice fait 3005 documents x 6476 mots. Chaque mot est une variable donc on est en grande
+#dimension (beaucoup plus de variables que de documents). Mais un titre utilise seulement 6 mots sur 6476, tout
+#le reste vaut 0 : 99.9% de zeros, la matrice est creuse. Le vocabulaire grandit avec le nombre de documents
+#alors qu'un document reste court.
 
 #5. Wordcloud
 Frequences <- colSums(m)
@@ -63,3 +76,6 @@ wordcloud(words[1:100],
           Frequences[1:100],
           max.words = 100,
           random.order = FALSE)
+
+#Reponse Q5 : mots les plus frequents : nsw, election, says, christchurch, new, police. On retrouve l'actualite
+#de mars 2019 (elections en Nouvelle-Galles du Sud, attentat de Christchurch, brexit).
